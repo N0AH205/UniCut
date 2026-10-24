@@ -4,10 +4,12 @@ UniCut's MIT License covers its original code. It does not relicense upstream
 models, libraries, fonts, or their bundled components. Copyright and license
 notices supplied by each upstream project remain applicable.
 
-This is a source distribution. It does not contain model weights, Python
-dependency binaries, or font files. Dependencies are installed separately with
-pip, the model is downloaded from Hugging Face, and fonts are loaded by the
-browser from Google Fonts.
+The Git repository is a source distribution without model weights, dependency
+binaries, or font files. Docker builds install Python dependencies and Debian
+runtime packages, retaining their installed license notices; model weights are
+downloaded separately into a cache volume. The browser loads fonts from Google
+Fonts. Redistributing a built image requires preserving the licenses applicable
+to its exact contents.
 
 ## BiRefNet Lite
 
@@ -34,7 +36,7 @@ inventory of a packaged installer.
 | ONNX Runtime | MIT | [microsoft/onnxruntime](https://github.com/microsoft/onnxruntime) |
 | NumPy | BSD-3-Clause, with additional component licenses | [numpy/numpy](https://github.com/numpy/numpy) |
 | Pillow | MIT-CMU, with additional component licenses | [python-pillow/Pillow](https://github.com/python-pillow/Pillow) |
-| OpenCV / opencv-python | Apache-2.0, with additional component licenses | [opencv/opencv-python](https://github.com/opencv/opencv-python) |
+| OpenCV / opencv-python-headless | Apache-2.0, with additional component licenses | [opencv/opencv-python](https://github.com/opencv/opencv-python) |
 | SciPy | BSD-3-Clause, with additional component licenses | [scipy/scipy](https://github.com/scipy/scipy) |
 | PyMatting | MIT | [pymatting/pymatting](https://github.com/pymatting/pymatting) |
 | huggingface-hub | Apache-2.0 | [huggingface/huggingface_hub](https://github.com/huggingface/huggingface_hub) |

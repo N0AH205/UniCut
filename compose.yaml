@@ -1,0 +1,15 @@
+name: unicut
+
+services:
+  unicut:
+    build: .
+    image: unicut:local
+    ports:
+      - "127.0.0.1:${UNICUT_PORT:-7860}:7860"
+    volumes:
+      - unicut-cache:/home/unicut/.cache
+    init: true
+    restart: unless-stopped
+
+volumes:
+  unicut-cache:

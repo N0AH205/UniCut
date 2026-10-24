@@ -15,7 +15,7 @@ follow [SECURITY.md](SECURITY.md).
 ## Making a change
 
 1. Fork the repository and create a branch for your change.
-2. Follow the setup instructions in the README.
+2. Follow the [developer setup instructions](docs/DEVELOPMENT.md).
 3. Keep changes focused and follow the existing Python and vanilla JavaScript style.
 4. Add regression coverage for meaningful behavior changes and run the checks below.
 5. Explain the problem, the change, and how you verified it in your pull request.

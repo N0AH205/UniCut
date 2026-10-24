@@ -1,0 +1,14 @@
+**
+!requirements.txt
+!server.py
+!core/
+!core/**
+!static/
+!static/**
+!LICENSE
+!THIRD_PARTY_NOTICES.md
+!licenses/
+!licenses/**
+**/__pycache__/
+**/*.pyc
+static/test_product*.png

@@ -37,3 +37,31 @@ jobs:
           for file in static/js/*.js; do
             node --check "$file" || exit 1
           done
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: unicut-ci
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate Docker Compose
+        run: docker compose config --quiet
+      - name: Build container
+        run: docker compose build
+      - name: Start container
+        run: docker compose up --wait --wait-timeout 300
+      - name: Check container and brush API
+        run: docker compose exec -T unicut python - < tests/docker_smoke.py
+      - name: Write cache marker
+        run: docker compose exec -T unicut python -c "from pathlib import Path; Path('/home/unicut/.cache/.ci-marker').write_text('persistent')"
+      - name: Recreate container
+        run: docker compose up --force-recreate --wait --wait-timeout 300
+      - name: Verify cache survives recreation
+        run: docker compose exec -T unicut python -c "from pathlib import Path; assert Path('/home/unicut/.cache/.ci-marker').read_text() == 'persistent'"
+      - name: Container logs
+        if: failure()
+        run: docker compose logs --tail 100
+      - name: Stop container
+        if: always()
+        run: docker compose down --volumes

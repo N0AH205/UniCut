@@ -4,6 +4,9 @@ UniCut is currently a local-use beta. The default launcher binds to
 `127.0.0.1:7860`. It has no authentication, tenant isolation, or public-service
 resource controls and is not intended to accept untrusted internet traffic.
 
+Docker Compose publishes the host port on `127.0.0.1` even though Uvicorn listens
+on all interfaces inside the container. The container runs as a non-root user.
+
 Keep the server on localhost. Do not expose it through a public tunnel or change
 the bind address to a public interface without implementing and reviewing the
 necessary access and resource controls. Uploaded images and masks are held in
