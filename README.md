@@ -1,8 +1,6 @@
 # UniCut
 
 Remove image backgrounds on your own computer, with batch processing and manual tools for difficult edges and hair.
-
-[![Tests](https://github.com/N0AH205/UniCut/actions/workflows/tests.yml/badge.svg)](https://github.com/N0AH205/UniCut/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Preview
