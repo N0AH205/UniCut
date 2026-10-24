@@ -5,6 +5,43 @@ Remove image backgrounds on your own computer, with batch processing and manual 
 [![Tests](https://github.com/N0AH205/UniCut/actions/workflows/tests.yml/badge.svg)](https://github.com/N0AH205/UniCut/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## Preview
+
+### Compare the original and cutout
+
+Use the split-view slider to inspect the original photo alongside the transparent-background result.
+
+![UniCut split view comparing a basketball photo with its transparent-background cutout](docs/screenshots/split-view.png)
+
+<details>
+<summary>More screenshots: workspace, batch processing, backgrounds, and trimap</summary>
+
+### The workspace
+
+Upload an image, choose a view, and access the refinement tools and processing controls in one workspace.
+
+![UniCut workspace showing the upload area, refinement toolbar, processing controls, and export options](docs/screenshots/workspace.png)
+
+### Batch processing
+
+Queue multiple images and choose shared processing settings before starting the batch.
+
+![UniCut Batch Processing Studio with seven queued images and shared model, matting, shadow, and despill settings](docs/screenshots/batch-processing.png)
+
+### Background previews
+
+Check your cutout against different background colors before exporting it.
+
+![UniCut split view comparing a group photo with a green-background preview](docs/screenshots/background-preview.png)
+
+### Trimap inspection
+
+Inspect foreground regions and uncertain edges in the trimap view when refining a result.
+
+![UniCut trimap view showing foreground regions in green and uncertain boundaries in yellow](docs/screenshots/trimap.png)
+
+</details>
+
 ## Start using UniCut
 
 ### Windows: download and double-click
