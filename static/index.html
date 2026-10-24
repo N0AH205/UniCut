@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniCut</title>
+    <meta name="description"
+        content="High-precision self-hosted background removal combining BiRefNet, morphological trimaps, PyMatting alpha estimation, color despill, and interactive human-guided refinement.">
+    <link rel="icon" type="image/png" sizes="128x128" href="/static/img/favicon.png?v=logo1">
+    <link rel="shortcut icon" href="/static/img/favicon.ico?v=logo1">
+    <link rel="apple-touch-icon" href="/static/img/favicon.png?v=logo1">
+    <link rel="stylesheet" href="/static/css/style.css?v=local_matte2">
+</head>
+
+<body>
+    <header class="app-header">
+        <div class="brand-section">
+            <img src="/static/img/logo.png?v=logo1" alt="UniCut Logo" class="brand-logo-img" width="24" height="24" style="width: 24px; height: 24px; max-width: 24px; max-height: 24px; object-fit: contain; display: block; flex-shrink: 0;">
+            <div class="brand-title">UniCut</div>
+        </div>
+
+        <div class="header-right">
+
+            <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+            <input type="file" id="bgFileInput" accept="image/*" style="display: none;">
+
+            <div class="header-layout-toggle-group history-controls" role="group" aria-label="Edit history">
+                <button type="button" class="btn-layout-toggle" id="undoEditBtn" disabled title="Undo (Ctrl+Z)" aria-label="Undo" aria-keyshortcuts="Control+Z Meta+Z">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 14-5-5 5-5"/><path d="M4 9h10a6 6 0 0 1 0 12"/></svg>
+                </button>
+                <button type="button" class="btn-layout-toggle" id="redoEditBtn" disabled title="Redo (Ctrl+Shift+Z / Ctrl+Y)" aria-label="Redo" aria-keyshortcuts="Control+Shift+Z Control+Y Meta+Shift+Z">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12"/></svg>
+                </button>
+            </div>
+
+            <button class="btn-open-image" id="headerUploadBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span>Open image</span>
+            </button>
+
+            <button class="btn-batch" id="headerBatchBtn" title="Batch Process Multiple Images">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                </svg>
+                <span>Batch process</span>
+            </button>
+
+            <div class="header-layout-toggle-group" title="Workspace Layout & Resizing">
+                <button class="btn-layout-toggle active" id="headerToggleToolbarBtn" title="Toggle toolbar (Ctrl+[)" aria-label="Toggle toolbar sidebar">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                </button>
+                <button class="btn-layout-toggle active" id="headerToggleInspectorBtn" title="Toggle inspector (Ctrl+])" aria-label="Toggle inspector sidebar">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="15" x2="15" y2="21"/><line x1="15" y1="3" x2="15" y2="9"/></svg>
+                </button>
+                <button class="btn-layout-toggle" id="headerResetLayoutBtn" title="Reset navbars to default sizes" aria-label="Reset navbars to default sizes">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+            </div>
+
+            <a href="/docs" target="_blank" class="btn-specs">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+                <span>API specs</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="studio-layout" id="studioLayout">
+        <aside class="toolbar-sidebar" id="toolbarSidebar">
+            <div class="toolbar-tools-group">
+                <div class="tool-item active" data-tool="split" id="toolSplitBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <line x1="12" y1="3" x2="12" y2="21" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Split view</span>
+                </div>
+
+                <div class="tool-item" data-tool="hand" id="toolHandBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v5" />
+                            <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+                            <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+                            <path
+                                d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Hand / Pan</span>
+                </div>
+
+                <div class="tool-item" data-tool="point_fg" id="toolPointFgBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <line x1="12" y1="8" x2="12" y2="16" />
+                            <line x1="8" y1="12" x2="16" y2="12" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Keep point</span>
+                </div>
+
+                <div class="tool-item" data-tool="point_bg" id="toolPointBgBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <line x1="8" y1="12" x2="16" y2="12" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Drop point</span>
+                </div>
+
+                <div class="tool-item" data-tool="brush_fg" id="toolBrushFgBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 12 8-8a2.5 2.5 0 1 1 3.5 3.5l-8 8" />
+                            <path
+                                d="M7 15c-1.5 0-3 1.3-3 2.8 0 1.2-2 1.4-1.7 1.9 1 1 2.3 1.8 3.7 1.8 2 0 3.7-1.6 3.7-3.7A2.8 2.8 0 0 0 7 15z" />
+                            <circle cx="18" cy="18" r="3.5" fill="#202020" />
+                            <line x1="18" y1="16" x2="18" y2="20" />
+                            <line x1="16" y1="18" x2="20" y2="18" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Keep brush</span>
+                </div>
+
+                <div class="tool-item" data-tool="brush_bg" id="toolBrushBgBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 12 8-8a2.5 2.5 0 1 1 3.5 3.5l-8 8" />
+                            <path
+                                d="M7 15c-1.5 0-3 1.3-3 2.8 0 1.2-2 1.4-1.7 1.9 1 1 2.3 1.8 3.7 1.8 2 0 3.7-1.6 3.7-3.7A2.8 2.8 0 0 0 7 15z" />
+                            <circle cx="18" cy="18" r="3.5" fill="#202020" />
+                            <line x1="16" y1="18" x2="20" y2="18" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Erase brush</span>
+                </div>
+
+                <div class="tool-item" data-tool="brush_unknown" id="toolBrushUnknownBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 4 5 5" />
+                            <path d="m14 9-9 9a2.12 2.12 0 0 0 3 3l9-9" />
+                            <path d="M9 2v3" />
+                            <path d="M2 9h3" />
+                            <path d="M5 4l2 2" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Matte brush</span>
+                </div>
+
+                <div class="tool-item" data-tool="eraser" id="toolEraserBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
+                            <path d="M22 21H7" />
+                            <path d="m5 11 9 9" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Eraser</span>
+                </div>
+            </div>
+
+            <div class="sidebar-bottom-tools">
+                <div class="tool-item" id="clearStrokesBtn">
+                    <span class="tool-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                    </span>
+                    <span class="tool-label">Reset marks</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Left Resizer between Toolbar & Canvas -->
+        <div class="layout-resizer layout-resizer-left" id="toolbarResizer" title="Drag to resize toolbar • Double-click to reset • Click arrow to toggle">
+            <div class="resizer-handle-pill"></div>
+            <button class="resizer-collapse-btn resizer-collapse-left" id="btnToggleToolbar" title="Toggle toolbar" aria-label="Toggle toolbar sidebar">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="resizer-tooltip" id="toolbarResizerTooltip">52px</div>
+        </div>
+
+        <main class="viewport-area" id="canvasViewport">
+            <div class="viewport-floating-topbar">
+                <div class="viewmode-capsule" id="floatingViewPanel">
+                    <button class="panel-drag-handle" type="button" aria-label="Move view controls" title="Drag to move; double-click to reset">⠿</button>
+                    <button class="viewmode-btn pill-btn" data-view="split">Split view</button>
+                    <button class="viewmode-btn pill-btn" data-view="cutout">Cutout</button>
+                    <button class="viewmode-btn pill-btn" data-view="orig">Original</button>
+                    <button class="viewmode-btn pill-btn active" data-view="alpha">Alpha mask</button>
+                    <button class="viewmode-btn pill-btn" data-view="trimap">Trimap</button>
+                </div>
+            </div>
+
+            <div class="viewport-top-right-coords" id="coordInspectorText"></div>
+
+            <div class="canvas-stage" id="canvasContainer">
+                <div class="canvas-viewmode-tag" id="canvasViewTag" style="display: none;">Split view</div>
+
+                <div class="floating-backdrop-panel" id="floatingBackdropPanel" style="display: none;">
+                    <button class="panel-drag-handle" type="button" aria-label="Move background controls" title="Drag to move; double-click to reset">⠿</button>
+                    <span class="backdrop-label">Background</span>
+                    <div class="backdrop-swatches">
+                        <div class="bg-swatch checkerboard bg-dot active" data-bg="checkerboard"
+                            title="Transparent grid"></div>
+                        <div class="bg-swatch white bg-dot" data-bg="white" title="Pure white (#ffffff)"></div>
+                        <div class="bg-swatch black bg-dot" data-bg="black" title="Deep black (#000000)"></div>
+                        <div class="bg-swatch green bg-dot" data-bg="green" title="Chroma green (#00e676)"></div>
+                        <div class="bg-swatch blue bg-dot" data-bg="blue" title="Studio blue (#0066ff)"></div>
+                        <div class="bg-swatch gray bg-dot" data-bg="gray" title="Neutral 50% gray (#808080)"></div>
+                        <label class="bg-swatch color-picker-swatch" id="customColorLabel"
+                            title="Pick any custom color">
+                            <input type="color" id="backdropColorPicker" value="#3b82f6">
+                            <span class="color-picker-icon">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.6 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.7-1.7 1.7-1.7H17c3 0 5.5-2.5 5.5-5.5C22.5 6.5 17.5 2 12 2Z" />
+                                </svg>
+                            </span>
+                        </label>
+                        <button class="btn-custom-bg" id="customBgTriggerBtn" title="Upload custom image background">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            <span>Custom</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="empty-dropzone" id="emptyDropzone">
+                    <div class="dropzone-icon">
+                        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                            <path d="M12 8v5M9.5 10.5 12 8l2.5 2.5" />
+                        </svg>
+                    </div>
+                    <div class="dropzone-title">Drop your image here or browse</div>
+                    <div class="dropzone-subtitle">
+                        Supports 4K+ high-resolution portraits, transparent glass, e-commerce, hair, fur & complex
+                        backgrounds.
+                    </div>
+                </div>
+
+                <canvas id="mainCanvas"></canvas>
+
+                <div id="brushCursorRing"></div>
+            </div>
+
+            <div class="viewport-bottombar">
+                <div class="zoom-group">
+                    <button class="btn-zoom" id="zoomOutBtn" title="Zoom out">−</button>
+                    <span class="zoom-badge" id="zoomPercentVal">100%</span>
+                    <button class="btn-zoom" id="zoomInBtn" title="Zoom in">+</button>
+                    <button class="btn-fit" id="zoomResetBtn" title="Fit to screen">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                        </svg>
+                        <span>Fit</span>
+                    </button>
+                </div>
+
+                <div class="brush-slider-group" id="brushControlsStrip">
+                    <span class="brush-tag">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 12 8-8a2.5 2.5 0 1 1 3.5 3.5l-8 8" />
+                            <path
+                                d="M7 15c-1.5 0-3 1.3-3 2.8 0 1.2-2 1.4-1.7 1.9 1 1 2.3 1.8 3.7 1.8 2 0 3.7-1.6 3.7-3.7A2.8 2.8 0 0 0 7 15z" />
+                        </svg>
+                        <span>Brush</span>
+                    </span>
+                    <input type="range" class="lime-slider" id="brushSizeSlider" min="2" max="150" value="24">
+                    <span class="brush-value-text" id="brushSizeVal">24px</span>
+                </div>
+
+                <div style="min-width: 120px;"></div>
+            </div>
+        </main>
+
+        <!-- Right Resizer between Canvas & Inspector -->
+        <div class="layout-resizer layout-resizer-right" id="inspectorResizer" title="Drag to resize inspector • Double-click to reset • Click arrow to toggle">
+            <div class="resizer-handle-pill"></div>
+            <button class="resizer-collapse-btn resizer-collapse-right" id="btnToggleInspector" title="Toggle inspector" aria-label="Toggle inspector sidebar">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="resizer-tooltip" id="inspectorResizerTooltip">320px</div>
+        </div>
+
+        <aside class="inspector-sidebar" id="inspectorSidebar">
+            <div class="inspector-header">
+                <div class="inspector-title-group">
+                    <span class="inspector-caption">Inspector</span>
+                    <span class="inspector-main-title">Processing pipeline</span>
+                </div>
+            </div>
+
+            <div class="accordion-container">
+                <div class="accordion-item open" id="accColorDespill">
+                    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="accordion-title">
+                            <span>01</span> Color despill
+                        </span>
+                        <span class="accordion-chevron">▶</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="field-group">
+                            <span class="field-label">Algorithm</span>
+                            <select class="dark-select" id="despillModeSelect">
+                                <option value="auto">Auto-detect spill</option>
+                                <option value="ambient">Ambient background neutralizer</option>
+                                <option value="green">Green screen suppression</option>
+                                <option value="blue">Blue screen suppression</option>
+                                <option value="ml">PyMatting ML foreground recovery</option>
+                                <option value="none">Off (raw cutout)</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <div class="field-label-row">
+                                <span class="field-label">Strength</span>
+                                <span class="field-value" id="despillStrengthVal">80%</span>
+                            </div>
+                            <input type="range" class="lime-slider" id="despillStrengthSlider" min="0" max="1"
+                                step="0.05" value="0.8" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item" id="accEdgeProcessing">
+                    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="accordion-title">
+                            <span>02</span> Edge processing
+                        </span>
+                        <span class="accordion-chevron">▶</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="field-group">
+                            <div class="field-label-row">
+                                <span class="field-label">Edge shift (choke)</span>
+                                <span class="field-value" id="edgeShiftVal">0px</span>
+                            </div>
+                            <input type="range" class="lime-slider" id="edgeShiftSlider" min="-10" max="10" value="0"
+                                style="width: 100%;">
+                        </div>
+
+                        <div class="field-group">
+                            <div class="field-label-row">
+                                <span class="field-label">Edge feather</span>
+                                <span class="field-value" id="edgeFeatherVal">0.0px</span>
+                            </div>
+                            <input type="range" class="lime-slider" id="edgeFeatherSlider" min="0" max="8" step="0.5"
+                                value="0" style="width: 100%;">
+                        </div>
+
+                        <div class="field-group">
+                            <div class="field-label-row">
+                                <span class="field-label">Alpha gamma</span>
+                                <span class="field-value" id="gammaVal">1.0</span>
+                            </div>
+                            <input type="range" class="lime-slider" id="gammaSlider" min="0.4" max="2.0" step="0.05"
+                                value="1.0" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item" id="accBaseSegmentation">
+                    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="accordion-title">
+                            <span>03</span> Base segmentation & 4K
+                        </span>
+                        <span class="accordion-chevron">▶</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="field-group">
+                            <span class="field-label">Model</span>
+                            <select class="dark-select" id="modelSelect">
+                                <option value="birefnet-lite">BiRefNet Lite</option>
+                            </select>
+                            <div style="font-size: 10px; color: var(--text-dim);">BiRefNet Lite processes images locally. First use downloads the model.</div>
+                        </div>
+
+                        <div class="field-group"
+                            style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 4px;">
+                            <div>
+                                <span class="field-label">4K+ tiling inference</span>
+                                <div style="font-size: 9px; color: var(--text-dim);">Seamless 2D Hann patch blending
+                                </div>
+                            </div>
+                            <input type="checkbox" id="enableTilingToggle" style="width: 15px; height: 15px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item" id="accTrimapMatting">
+                    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="accordion-title">
+                            <span>04</span> Trimap & alpha matting
+                        </span>
+                        <span class="accordion-chevron">▶</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="field-group">
+                            <div class="field-label-row">
+                                <span class="field-label">Unknown band radius</span>
+                                <span class="field-value" id="trimapRadiusVal">12px</span>
+                            </div>
+                            <input type="range" class="lime-slider" id="trimapRadiusSlider" min="2" max="40" value="12"
+                                style="width: 100%;">
+                        </div>
+
+                        <div class="field-group"
+                            style="flex-direction: row; justify-content: space-between; align-items: center;">
+                            <span class="field-label">Continuous alpha matting</span>
+                            <input type="checkbox" id="enableMattingToggle" checked style="width: 15px; height: 15px;">
+                        </div>
+
+                        <div class="field-group">
+                            <span class="field-label">Solver method</span>
+                            <select class="dark-select" id="mattingMethodSelect">
+                                <option value="lkm" selected>Large Kernel Matting (Linear-time • Fast)</option>
+                                <option value="cf">Closed-Form Matting (Levin et al.)</option>
+                                <option value="knn">KNN Matting</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item open" id="accShadow">
+                    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="accordion-title">
+                            <span>05</span> Realistic shadow
+                        </span>
+                        <span class="accordion-chevron">▶</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="field-group">
+                            <span class="field-label">Shadow style</span>
+                            <select class="dark-select" id="shadowTypeSelect">
+                                <option value="none" selected>No shadow (raw cutout)</option>
+                                <option value="contact">Ground contact shadow (E-commerce)</option>
+                                <option value="drop">Soft drop shadow (Floating / Wall)</option>
+                            </select>
+                        </div>
+
+                        <div id="shadowControlsGroup" style="display: none; flex-direction: column; gap: 8px;">
+                            <div class="field-group">
+                                <div class="field-label-row">
+                                    <span class="field-label">Opacity</span>
+                                    <span class="field-value" id="shadowOpacityVal">60%</span>
+                                </div>
+                                <input type="range" class="lime-slider" id="shadowOpacitySlider" min="0" max="1" step="0.05" value="0.6" style="width: 100%;">
+                            </div>
+
+                            <div class="field-group">
+                                <div class="field-label-row">
+                                    <span class="field-label">Softness / Blur</span>
+                                    <span class="field-value" id="shadowBlurVal">20px</span>
+                                </div>
+                                <input type="range" class="lime-slider" id="shadowBlurSlider" min="2" max="60" step="1" value="20" style="width: 100%;">
+                            </div>
+
+                            <div class="field-group" id="shadowContactControls">
+                                <div class="field-label-row">
+                                    <span class="field-label">Ground depth</span>
+                                    <span class="field-value" id="shadowScaleVal">25%</span>
+                                </div>
+                                <input type="range" class="lime-slider" id="shadowScaleSlider" min="0.08" max="0.5" step="0.02" value="0.25" style="width: 100%;">
+                            </div>
+
+                            <div class="field-group" id="shadowDropControls" style="display: none;">
+                                <div class="field-label-row">
+                                    <span class="field-label">Vertical offset</span>
+                                    <span class="field-value" id="shadowOffsetVal">15px</span>
+                                </div>
+                                <input type="range" class="lime-slider" id="shadowOffsetSlider" min="-30" max="80" step="1" value="15" style="width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item open" id="accManualRefine">
+                    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="accordion-title">
+                            <span>06</span> Manual refinement
+                        </span>
+                        <span class="accordion-chevron">▶</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p class="refine-help">Keep and Erase brushes set transparency exactly. Paint Matte narrowly along hair edges, with Keep marks inside the hair and Erase marks outside. Then apply brush edits.</p>
+                        <div class="refine-action-grid">
+                            <div class="btn-refine-card" id="runPointRefineBtn">
+                                <span class="refine-card-title">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="6 4 20 12 6 20 6 4" />
+                                    </svg>
+                                    <span>Run point refine</span>
+                                </span>
+                                <span class="refine-card-sub">Apply Keep / Drop points</span>
+                            </div>
+                            <div class="btn-refine-card" id="runTrimapMatBtn">
+                                <span class="refine-card-title">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path
+                                            d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                                    </svg>
+                                    <span>Apply brush edits</span>
+                                </span>
+                                <span class="refine-card-sub">Keep / Erase directly; Matte refines hair</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="export-hub-panel">
+                <div class="export-hub-header">
+                    <span class="export-hub-title">Export hub</span>
+                    <span class="export-hub-dimensions" id="exportHubDimText">- × - px</span>
+                </div>
+
+                <button class="btn-download-primary" id="downloadCutoutBtn">
+                    <svg class="download-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    <div class="download-text-group">
+                        <span class="download-main-text">Download cutout</span>
+                        <span class="download-sub-text">Transparent RGBA • PNG</span>
+                    </div>
+                </button>
+
+                <div class="export-secondary-grid">
+                    <button class="btn-export-sub" id="downloadCompositeBtn">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                        <span>Composited</span>
+                    </button>
+                    <button class="btn-export-sub" id="copyClipboardBtn">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        <span>Copy PNG</span>
+                    </button>
+                </div>
+
+                <div class="export-secondary-grid">
+                    <button class="btn-export-sub" id="downloadAlphaBtn">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 2a10 10 0 0 1 0 20Z" fill="currentColor" />
+                        </svg>
+                        <span>Alpha mask</span>
+                    </button>
+                    <button class="btn-export-sub" onclick="window.print()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9" />
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                            <rect x="6" y="14" width="12" height="8" />
+                        </svg>
+                        <span>Print / PDF</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <dialog id="batchModal" class="batch-dialog" closedby="any" aria-labelledby="batchDialogTitle">
+        <div class="batch-modal-inner">
+            <div class="batch-modal-header">
+                <div class="batch-title-group">
+                    <h2 id="batchDialogTitle" class="batch-title">Batch Processing Studio</h2>
+                    <span class="batch-subtitle">Automatic background removal & matting for multiple images</span>
+                </div>
+                <button class="batch-close-btn" id="batchCloseBtn" aria-label="Close dialog">✕</button>
+            </div>
+
+            <div class="batch-settings-bar">
+                <div class="batch-setting-item">
+                    <label>Model</label>
+                    <select class="dark-select batch-select" id="batchModelSelect">
+                        <option value="birefnet-lite">BiRefNet Lite</option>
+                    </select>
+                </div>
+                <div class="batch-setting-item">
+                    <label>Matting</label>
+                    <select class="dark-select batch-select" id="batchMattingSelect">
+                        <option value="lkm">Fast Guided (LKM)</option>
+                        <option value="none">Off (Ultra-speed)</option>
+                    </select>
+                </div>
+                <div class="batch-setting-item">
+                    <label>Shadow</label>
+                    <select class="dark-select batch-select" id="batchShadowSelect">
+                        <option value="none">No shadow</option>
+                        <option value="contact">Ground contact</option>
+                        <option value="drop">Drop shadow</option>
+                    </select>
+                </div>
+                <div class="batch-setting-item">
+                    <label>Despill</label>
+                    <select class="dark-select batch-select" id="batchDespillSelect">
+                        <option value="auto">Auto-detect</option>
+                        <option value="ambient">Ambient</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="batch-dropzone" id="batchDropzone">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span class="batch-drop-title">Drop images here to batch process</span>
+                <input type="file" id="batchFileInput" multiple accept="image/*" style="display: none;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px;">
+                    <button class="btn-batch-browse" id="batchBrowseBtn" type="button">Browse files</button>
+                </div>
+            </div>
+
+            <div class="batch-queue-container" id="batchQueueContainer" style="display: none;">
+                <div class="batch-queue-header">
+                    <span class="queue-status-text" id="batchQueueStatusText">0 images queued</span>
+                    <div class="queue-actions">
+                        <button class="btn-batch-clear" id="batchClearBtn" type="button">Clear list</button>
+                    </div>
+                </div>
+                <div class="batch-queue-list" id="batchQueueList"></div>
+            </div>
+
+            <div class="batch-modal-footer">
+                <div class="batch-progress-wrapper" id="batchProgressWrapper" style="display: none;">
+                    <div class="batch-progress-bar">
+                        <div class="batch-progress-fill" id="batchProgressFill" style="width: 0%;"></div>
+                    </div>
+                    <span class="batch-progress-text" id="batchProgressText">0 / 0</span>
+                </div>
+                <div class="batch-footer-actions">
+                    <button class="btn-batch-zip" id="batchDownloadZipBtn" disabled type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Download All (ZIP)</span>
+                    </button>
+                    <button class="btn-batch-start" id="batchStartBtn" disabled type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>Start Batch</span>
+                    </button>
+                </div>
+                <div class="batch-resize-grip" title="Drag to resize dialog window"></div>
+            </div>
+        </div>
+    </dialog>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="pulse-spinner"></div>
+        <div class="loading-status-text" id="loadingText">Processing image...</div>
+        <div class="loading-stage-pill" id="loadingStage">Stage 1: Neural segmentation</div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/api.js?v=subtle_white1"></script>
+    <script src="/static/js/canvas.js?v=local_matte2"></script>
+    <script src="/static/js/floating-panels.js"></script>
+    <script src="/static/js/app.js?v=local_matte2"></script>
+</body>
+
+</html>
