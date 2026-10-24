@@ -7,7 +7,7 @@ from typing import Tuple, Optional
 logger = logging.getLogger("UniCut.MattingEngine")
 
 class MattingError(RuntimeError):
-    """Raised when no matting solver can produce a usable alpha mask."""
+    pass
 
 
 class MattingEngine:

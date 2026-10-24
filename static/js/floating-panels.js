@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const saved = JSON.parse(localStorage.getItem(key));
             if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) position = saved;
-        } catch (_) { /* Storage may be unavailable. */ }
+        } catch (_) {  }
 
         function place() {
             if (!position || !panel.getClientRects().length) return;

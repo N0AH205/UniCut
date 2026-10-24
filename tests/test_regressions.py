@@ -1,4 +1,3 @@
-"""Regression tests isolated from model downloads and PyMatting JIT startup."""
 import ast
 import asyncio
 import importlib.util
@@ -24,7 +23,6 @@ with patch.dict(sys.modules, pymatting=solvers):
 
 
 def run_immediate(coro):
-    """Exercise pre-I/O validation paths without creating a Windows event loop."""
     try:
         coro.send(None)
     except StopIteration as result:

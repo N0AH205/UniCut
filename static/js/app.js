@@ -619,9 +619,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('headerUploadBtn').onclick = () => fileInput.click();
 
-    // ==========================================
-    // Batch Processing Studio Controller
-    // ==========================================
     const batchModal = document.getElementById('batchModal');
     const headerBatchBtn = document.getElementById('headerBatchBtn');
     const batchCloseBtn = document.getElementById('batchCloseBtn');
@@ -662,7 +659,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (headerBatchBtn) headerBatchBtn.addEventListener('click', openBatchModal);
     if (batchCloseBtn) batchCloseBtn.addEventListener('click', closeBatchModal);
 
-    // Light-dismiss click outside dialog fallback
     if (batchModal) {
         batchModal.addEventListener('click', (e) => {
             const rect = batchModal.getBoundingClientRect();
@@ -837,7 +833,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         baseAlphaB64 = item.alphaUrl;
         committedControls = readControls();
         updateHistoryButtons();
-        // Batch edits use the displayed image and alpha, never a previous session.
         currentImageId = null;
         currentFilename = `${item.name.split('.')[0]}_cutout.png`;
         currentOriginalB64 = item.origUrl;
@@ -990,9 +985,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // ==========================================
-    // Layout & Component Resizer Controller
-    // ==========================================
     class LayoutManager {
         constructor(studioInstance) {
             this.studio = studioInstance;
@@ -1084,7 +1076,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         bindResizers() {
-            // Toolbar Resizer Drag
             if (this.toolbarResizer) {
                 this.toolbarResizer.addEventListener('mousedown', (e) => {
                     if (e.target.closest('.resizer-collapse-btn')) return;
@@ -1109,7 +1100,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // Inspector Resizer Drag
             if (this.inspectorResizer) {
                 this.inspectorResizer.addEventListener('mousedown', (e) => {
                     if (e.target.closest('.resizer-collapse-btn')) return;
@@ -1134,7 +1124,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // Global Mouse Move & Up
             window.addEventListener('mousemove', (e) => {
                 if (this.isDraggingToolbar) {
                     const newW = Math.max(44, Math.min(e.clientX, 200));
@@ -1213,7 +1202,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // Keyboard shortcuts: Ctrl+[ for Toolbar, Ctrl+] for Inspector
             window.addEventListener('keydown', (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
                 if (e.ctrlKey || e.metaKey) {

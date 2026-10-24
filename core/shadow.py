@@ -15,18 +15,14 @@ class ShadowGenerator:
         blur = max(1, int(blur))
         opacity = float(np.clip(opacity, 0.0, 1.0))
 
-        # Shift alpha mask
         M = np.float32([[1, 0, offset_x], [0, 1, offset_y]])
         shifted = cv2.warpAffine(alpha, M, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
 
-        # Gaussian blur
         ksize = blur * 2 + 1
         blurred = cv2.GaussianBlur(shifted, (ksize, ksize), blur * 0.5)
 
-        # Scale by opacity
         shadow_mask = np.clip(blurred * opacity, 0.0, 1.0).astype(np.float32)
 
-        # Exclude shadow that falls strictly inside the foreground subject
         shadow_mask = np.clip(shadow_mask * (1.0 - alpha * 0.9), 0.0, 1.0)
         return shadow_mask
 
@@ -49,7 +45,6 @@ class ShadowGenerator:
 
         bottom_y = float(np.max(ys))
 
-        # 1. Perspective / Sheared Ground Cast
         M = np.float32([
             [1.0, shear_x, 0.0],
             [0.0, -scale_y, bottom_y * (1.0 + scale_y)]
@@ -61,18 +56,15 @@ class ShadowGenerator:
             borderValue=0
         )
 
-        # Gradient falloff: highest opacity near bottom_y, fading as distance increases
         y_coords = np.arange(h, dtype=np.float32).reshape(-1, 1)
         dist = np.maximum(0.0, y_coords - bottom_y)
         max_dist = max(1.0, h - bottom_y)
         gradient = np.clip(1.0 - (dist / (max_dist * 0.7)), 0.0, 1.0)
         cast_shadow = cast_mask * gradient
 
-        # Directional Gaussian blur for ground shadow
         k_cast = blur * 2 + 1
         cast_blurred = cv2.GaussianBlur(cast_shadow, (k_cast, k_cast), blur * 0.5)
 
-        # 2. Tight Ambient Contact Occlusion (directly grounding the base pixels)
         contact_zone = np.zeros((h, w), dtype=np.float32)
         contact_band = (ys >= bottom_y - 14)
         if np.any(contact_band):
@@ -87,7 +79,6 @@ class ShadowGenerator:
             contact_zone = cv2.GaussianBlur(contact_zone, (k_occ, k_occ), blur * 0.25)
 
         combined = np.clip(cast_blurred * 0.7 + contact_zone * 0.85, 0.0, 1.0) * opacity
-        # Keep crisp foreground
         combined = np.clip(combined * (1.0 - alpha * 0.9), 0.0, 1.0)
         return combined
 
@@ -104,7 +95,6 @@ class ShadowGenerator:
         alpha_fg_f = np.clip(alpha_fg, 0.0, 1.0)
         shadow_f = np.clip(shadow_mask, 0.0, 1.0)
 
-        # Calculate final composite RGBA
         out_alpha = alpha_fg_f + shadow_f * (1.0 - alpha_fg_f)
         denom = np.maximum(out_alpha[..., np.newaxis], 1e-6)
 

@@ -46,8 +46,6 @@ class InteractiveRefiner:
 
         grab_mask = np.full((curr_h, curr_w), cv2.GC_PR_BGD, dtype=np.uint8)
         grab_mask[roi_base >= 0.5] = cv2.GC_PR_FGD
-        # Model confidence is only a guess inside the correction region.
-        # Keep boundary context fixed while allowing even confident mistakes to change.
         border = np.zeros((curr_h, curr_w), dtype=bool)
         border[:3] = border[-3:] = True
         border[:, :3] = border[:, -3:] = True
@@ -87,7 +85,6 @@ class InteractiveRefiner:
             refined_patch = np.where((grab_mask == cv2.GC_FGD) | (grab_mask == cv2.GC_PR_FGD), 1.0, 0.0).astype(np.float32)
             changed = (refined_patch >= 0.5) != (roi_base >= 0.5)
             if np.any(changed):
-                # Re-mat changed boundaries without flattening existing hair alpha elsewhere.
                 affected = cv2.dilate(changed.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
                 trimap = MattingEngine.generate_trimap(refined_patch, radius=2)
                 trimap[prompt_mask == 1] = 1.0
@@ -135,7 +132,6 @@ class InteractiveRefiner:
         result = corrected.copy()
         ys, xs = np.where(unknown)
         tile_size, halo = 512, 64
-        # Solve small patches at native resolution, writing back only the Matte strokes.
         for y in range((int(ys.min()) // tile_size) * tile_size, int(ys.max()) + 1, tile_size):
             for x in range((int(xs.min()) // tile_size) * tile_size, int(xs.max()) + 1, tile_size):
                 y2, x2 = min(h, y + tile_size), min(w, x + tile_size)

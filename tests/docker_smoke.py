@@ -1,4 +1,3 @@
-"""Run inside a container against its local server; no model download required."""
 import base64
 import io
 import json

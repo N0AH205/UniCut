@@ -202,7 +202,6 @@ async def process_image(
         alpha_mask = result["alpha_mask"]
         trimap_vis = result["trimap_vis"]
 
-        # Apply shadow if requested
         if shadow_type == "drop":
             sh_mask = ShadowGenerator.generate_drop_shadow(
                 alpha_mask,

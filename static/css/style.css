@@ -1331,7 +1331,7 @@ input[type="checkbox"] {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Batch Processing Modal & Button */
+
 .btn-batch {
   background: #282828;
   color: #cccccc;
@@ -1743,9 +1743,7 @@ dialog.batch-dialog::backdrop {
   cursor: not-allowed;
 }
 
-/* ========================================================
-   Layout Resizer Dividers & Workspace Resizing Components
-   ======================================================== */
+
 .layout-resizer {
   position: relative;
   width: 4px;
@@ -1771,7 +1769,7 @@ dialog.batch-dialog::backdrop {
   z-index: 2;
 }
 
-/* Subtle white highlight - gentle, refined, not bright, zero glare */
+
 .layout-resizer:hover {
   background: rgba(255, 255, 255, 0.08);
   box-shadow: none;
@@ -1866,7 +1864,7 @@ dialog.batch-dialog::backdrop {
   opacity: 1;
 }
 
-/* Header layout toggles */
+
 .header-layout-toggle-group {
   display: flex;
   align-items: center;
@@ -1902,7 +1900,7 @@ dialog.batch-dialog::backdrop {
   color: #ffffff;
 }
 
-/* Resizable Batch Processing Modal */
+
 dialog.batch-dialog {
   resize: both;
   overflow: hidden;
@@ -1928,7 +1926,7 @@ dialog.batch-dialog {
   opacity: 1;
 }
 
-/* Floating controls have dedicated handles so swatches and tabs stay clickable. */
+
 .panel-drag-handle {
   flex: 0 0 auto;
   align-self: stretch;
