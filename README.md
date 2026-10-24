@@ -76,29 +76,6 @@ docker compose stop
 - Compare the original, cutout, and alpha mask; use different backgrounds.
 - Undo/Redo edits, adjust edges and color spill, and add optional generated shadows.
 
-**Local-use beta:** fine hair, glass, blur, and low-contrast boundaries can still need correction. Perfect extraction is not guaranteed.
-
-## Fixing a result
-
-| Want to... | Use this tool | Then click |
-| --- | --- | --- |
-| Restore a missing solid area | Keep brush | Apply brush edits |
-| Remove leftover background | Erase brush | Apply brush edits |
-| Refine hair or a soft edge | Matte brush along the edge; Keep inside and Erase outside | Apply brush edits |
-| Guide a larger local correction | Keep point / Drop point | Run point refine |
-
-Keep and Erase brushes set transparency exactly. Matte brush estimates partial transparency in local patches at the original image resolution. These tools edit the cutout, not the lighting on a person's skin or clothes.
-
-Use the top-bar Undo/Redo icons or **Ctrl/Cmd+Z** and **Ctrl/Cmd+Shift+Z**. **Reset marks** only clears guidance; Undo restores applied edits. The last 12 edits are kept for the current image. Refreshing, loading, or reprocessing an image can reset your work, so download results you want to keep.
-
-## A few things to know
-
-- **First photo:** UniCut downloads and loads the AI model. This can be slow, especially on CPU. Later uses reuse the cached files.
-- **Where it runs:** this Docker setup uses your computer's CPU. No paid inference account or GPU is required.
-- **Privacy:** image processing runs locally. Setup and model downloads need internet access, and the browser requests fonts from Google Fonts.
-- **Saved files:** Docker keeps downloaded model and compiler caches in a named volume. It does not save your editing session or uploaded photos as a project.
-- **Local access:** the Docker port is published only on `127.0.0.1`. UniCut has no login or public-service protections; do not expose it to the internet. See [SECURITY.md](SECURITY.md).
-
 ## Troubleshooting
 
 **Docker is not running:** open Docker Desktop and wait for it to finish starting. On Windows, use Linux containers.
@@ -112,13 +89,7 @@ docker compose up --build --wait --wait-timeout 300
 
 Then open http://127.0.0.1:7861.
 
-**Large photos fail:** check Docker Desktop's available memory, try a smaller image, or turn off automatic matting. Processing time and memory use depend on the photo and settings.
-
 **Something else went wrong:** run `docker compose logs --tail 100` in the UniCut folder and include the error when [reporting a bug](https://github.com/N0AH205/UniCut/issues). Do not share private photos or credentials.
-
-## Updating
-
-Download a fresh ZIP and run **Start UniCut.bat**, or run `git pull` followed by `docker compose up --build --wait --wait-timeout 300` if you use Git. The named cache volume is reused. Avoid deleting Docker volumes if you want to keep downloaded models.
 
 ## Developers
 
@@ -126,6 +97,6 @@ For Python installation, tests, Docker checks, and the REST API, see [the develo
 
 ## License
 
-Original UniCut code is available under the [MIT License](LICENSE), copyright Noah Stephen and contributors. Third-party models, libraries, fonts, and bundled components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Original UniCut code is available under the [MIT License](LICENSE), copyright Noah Stephen. Third-party models, libraries, fonts, and bundled components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 The model is [BiRefNet Lite ONNX](https://huggingface.co/onnx-community/BiRefNet_lite-ONNX), listed under MIT. Weights are downloaded separately and are not baked into the Docker image. The [upstream BiRefNet notice](licenses/BiRefNet-MIT.txt) is included.
